@@ -45,8 +45,8 @@ func main() {
 		WriteTimeout: 30 * time.Second,
 	}
 
-	logger.Printf("Starting %s on port: %d", cfg.env, cfg.port)
+	app.logger.Printf("Starting %s on port: %d", cfg.env, cfg.port)
 	if err := srv.ListenAndServe(); err != nil {
-		logger.Fatal(err)
+		app.logger.Fatal(err)
 	}
 }
