@@ -1,4 +1,4 @@
-module greenlight.haonguyen.tech
+module github.com/nguyenanhhao221/greenlight-api
 
 go 1.24.0
 
