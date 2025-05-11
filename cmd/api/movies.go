@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
+
+	"github.com/nguyenanhhao221/greenlight-api/internal/data"
 )
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +22,17 @@ func (app *application) showMovieHanlder(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if _, err := fmt.Fprintf(w, "show the details of movies %d\n", id); err != nil {
-		log.Printf("error writing to http ResponseWriter: %v\n", err)
+	movieData := data.Movie{
+		ID:        id,
+		CreatedAt: time.Now(),
+		Title:     "Batman",
+		Runtime:   102,
+		Genres:    []string{"superhero", "fiction"},
+		Version:   1,
+	}
+
+	if err := app.writeJSON(w, http.StatusOK, movieData, nil); err != nil {
+		app.logger.Printf("error writing to http ResponseWriter: %v\n", err)
+		http.Error(w, "The server encounter a problem and couldn't process your request", http.StatusInternalServerError)
 	}
 }
