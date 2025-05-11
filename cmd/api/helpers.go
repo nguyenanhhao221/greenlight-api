@@ -20,9 +20,11 @@ func (app *application) readParams(r *http.Request) (int64, error) {
 	return id, nil
 }
 
-func (app *application) writeJSON(w http.ResponseWriter,  status int, data any, headers http.Header) error {
+func (app *application) writeJSON(w http.ResponseWriter, status int, data any, headers http.Header) error {
 	// Encode the data to JSON, returning error if there was one
-	js, err := json.Marshal(data)
+	// Use the json.MarshalIndent() function so that white space is added to the encoded
+	// JSON. Here we use no line prefix ("") and tab indents ("\t") for each element.
+	js, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
 		return err
 	}
