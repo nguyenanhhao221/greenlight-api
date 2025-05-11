@@ -20,6 +20,9 @@ func (app *application) readParams(r *http.Request) (int64, error) {
 	return id, nil
 }
 
+// envelop help to envelope json data into a key
+type envelop map[string]any
+
 func (app *application) writeJSON(w http.ResponseWriter, status int, data any, headers http.Header) error {
 	// Encode the data to JSON, returning error if there was one
 	// Use the json.MarshalIndent() function so that white space is added to the encoded

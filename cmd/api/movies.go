@@ -31,7 +31,7 @@ func (app *application) showMovieHanlder(w http.ResponseWriter, r *http.Request)
 		Version:   1,
 	}
 
-	if err := app.writeJSON(w, http.StatusOK, movieData, nil); err != nil {
+	if err := app.writeJSON(w, http.StatusOK, envelop{"movie": movieData}, nil); err != nil {
 		app.logger.Printf("error writing to http ResponseWriter: %v\n", err)
 		http.Error(w, "The server encounter a problem and couldn't process your request", http.StatusInternalServerError)
 	}
