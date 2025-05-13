@@ -42,10 +42,8 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data any, h
 	// Note that it's OK if the provided header map is nil. Go doesn't throw an error
 	// if you try to range over (or generally, read from) a nil map.
 	maps.Copy(w.Header(), headers)
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-
 	if _, err := w.Write([]byte(js)); err != nil {
 		app.logger.Printf("error wring to http.ResponseWriter: %v\n", err)
 		return err
@@ -53,8 +51,15 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data any, h
 	return nil
 }
 
-func (app *application) readJSON(r *http.Request, dst any) error {
-	err := json.NewDecoder(r.Body).Decode(dst)
+func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+	// Limit the json read to 1mb
+	maxBytesAllow := 1_048_576
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytesAllow))
+
+	jsonDecoder := json.NewDecoder(r.Body)
+	jsonDecoder.DisallowUnknownFields() // raise an error when there is an unknown field when decode json rather than ignore
+
+	err := jsonDecoder.Decode(dst)
 	if err != nil {
 		var syntaxError *json.SyntaxError
 		var unmarshalTypeError *json.UnmarshalTypeError
@@ -98,6 +103,15 @@ func (app *application) readJSON(r *http.Request, dst any) error {
 		default:
 			return err
 		}
+	}
+
+	// Call Decode() again, using a pointer to an empty anonymous struct as the
+	// destination. If the request body only contained a single JSON value this will
+	// return an io.EOF error. So if we get anything else, we know that there is
+	// additional data in the request body and we return our own custom error message.
+	err = jsonDecoder.Decode(&struct{}{})
+	if err != io.EOF {
+		return errors.New("body must only contain a single JSON value")
 	}
 
 	return nil

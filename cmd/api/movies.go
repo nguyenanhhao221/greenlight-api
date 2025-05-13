@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -10,10 +9,6 @@ import (
 )
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
-	if _, err := fmt.Fprintln(w, "create a new movie"); err != nil {
-		log.Printf("error writing to http ResponseWriter: %v\n", err)
-	}
-
 	var movieInputData struct {
 		Title   string   `json:"title"`   // Movie title
 		Year    int32    `json:"year"`    // Movie release year
@@ -21,7 +16,7 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		Genres  []string `json:"genres"`  // Slice of genres for the movie (romance, comedy, etc.)
 	}
 
-	err := app.readJSON(r, &movieInputData)
+	err := app.readJSON(w, r, &movieInputData)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
