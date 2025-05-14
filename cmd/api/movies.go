@@ -10,10 +10,10 @@ import (
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
 	var movieInputData struct {
-		Title   string   `json:"title"`   // Movie title
-		Year    int32    `json:"year"`    // Movie release year
-		Runtime int32    `json:"runtime"` // Movie run time (in minutes)
-		Genres  []string `json:"genres"`  // Slice of genres for the movie (romance, comedy, etc.)
+		Title   string       `json:"title"`   // Movie title
+		Year    int32        `json:"year"`    // Movie release year
+		Runtime data.Runtime `json:"runtime"` // Movie run time (in minutes)
+		Genres  []string     `json:"genres"`  // Slice of genres for the movie (romance, comedy, etc.)
 	}
 
 	err := app.readJSON(w, r, &movieInputData)
