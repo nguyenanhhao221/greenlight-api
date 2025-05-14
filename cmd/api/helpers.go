@@ -130,3 +130,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 
 	return nil
 }
+
+func (app *application) failValidationResponse(w http.ResponseWriter, r *http.Request, err map[string]string) {
+	app.errorResponse(w, r, http.StatusUnprocessableEntity, err)
+}
