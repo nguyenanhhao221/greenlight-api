@@ -34,7 +34,7 @@ func (r *Runtime) UnmarshalJSON(jsonValue []byte) error {
 	// Use strconv.Unquote() to remove the surrounding quotes from the JSON string
 	jsStr, err := strconv.Unquote(string(jsonValue))
 	if err != nil {
-		return err
+		return ErrInvalidRuntimTypeFormat
 	}
 
 	// Split the string to isolate the part containing the number.
