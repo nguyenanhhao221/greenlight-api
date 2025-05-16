@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // TODO: do this at build time rather than hard code
@@ -15,6 +18,11 @@ const version = "1.0.0"
 type config struct {
 	port int
 	env  string
+	db   struct {
+		dsn          string
+		maxOpenConns int
+		maxIdleTime  time.Duration
+	}
 }
 type application struct {
 	config config
@@ -27,6 +35,10 @@ func main() {
 	// Get server config via cli flag
 	flag.IntVar(&cfg.port, "port", 42069, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
+	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgres://greenlight@localhost/greenlight", "PostgreSQL DSN")
+	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conn", 25, "Max open connection pool for postgres database")
+	flag.DurationVar(&cfg.db.maxIdleTime, "db-max-idle-time", 15*time.Minute, "the duration after which an idle connection will be automatically closed by the health check")
+
 	flag.Parse()
 
 	// Setup our own logger
@@ -45,8 +57,48 @@ func main() {
 		WriteTimeout: 30 * time.Second,
 	}
 
+	// setup postgres database connection
+	app.logger.Println("Opening database connection using pgxpool")
+	connPool, err := openDBConnPool(cfg)
+	if err != nil {
+		app.logger.Fatal(err)
+	}
+	defer connPool.Close()
+
 	app.logger.Printf("Starting %s on port: %d", cfg.env, cfg.port)
 	if err := srv.ListenAndServe(); err != nil {
 		app.logger.Fatal(err)
 	}
+}
+
+func setupDbConfig(cfg config) (*pgxpool.Config, error) {
+	dbConfig, err := pgxpool.ParseConfig(cfg.db.dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	dbConfig.MaxConns = int32(cfg.db.maxOpenConns)
+	dbConfig.MaxConnIdleTime = cfg.db.maxIdleTime
+
+	return dbConfig, nil
+}
+
+func openDBConnPool(cfg config) (*pgxpool.Pool, error) {
+	dbConfig, err := setupDbConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	dbpool, err := pgxpool.NewWithConfig(context.Background(), dbConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := dbpool.Ping(ctxWithTimeout); err != nil {
+		return nil, err
+	}
+	return dbpool, nil
 }
