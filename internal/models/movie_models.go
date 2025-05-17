@@ -2,6 +2,8 @@ package models
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nguyenanhhao221/greenlight-api/internal/data"
@@ -42,6 +44,9 @@ func (m *MovieModel) Get(id int64) (*data.Movie, error) {
 		&movie.Genres,
 		&movie.Version,
 	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return &movie, ErrRecordNotFound
+	}
 	return &movie, err
 }
 
