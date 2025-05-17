@@ -61,3 +61,12 @@ func (m *MovieModel) Update(movie *data.Movie) error {
 
 	return m.DB.QueryRow(context.Background(), query, args...).Scan(&movie.Version)
 }
+
+func (m *MovieModel) Delete(id int64) error {
+	query := `DELETE FROM movies WHERE id = $1`
+	result, err := m.DB.Exec(context.Background(), query, id)
+	if result.RowsAffected() == 0 {
+		return ErrRecordNotFound
+	}
+	return err
+}
