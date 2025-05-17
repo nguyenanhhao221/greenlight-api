@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -23,6 +22,7 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Validate user input
 	validator := validator.New()
 
 	movie := data.Movie{
@@ -36,8 +36,14 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, err = fmt.Fprintf(w, "%+v\n", movieInputData)
+	// Create movie to database, Create will also update the fill the movie variable with correct data
+	err = app.models.Movie.Create(&movie)
 	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+
+	// Write back to client success response
+	if err := app.writeJSON(w, http.StatusCreated, envelop{"movie": movie}, nil); err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }
