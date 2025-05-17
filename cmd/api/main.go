@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nguyenanhhao221/greenlight-api/internal/models"
 )
 
 // TODO: do this at build time rather than hard code
@@ -27,6 +28,7 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
+	models models.Models
 }
 
 func main() {
@@ -44,9 +46,18 @@ func main() {
 	// Setup our own logger
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
+	// setup postgres database connection
+	logger.Println("Opening database connection using pgxpool")
+	connPool, err := openDBConnPool(cfg)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	defer connPool.Close()
+
 	app := &application{
 		config: cfg,
 		logger: logger,
+		models: models.New(connPool), // set up basic model for database access layer
 	}
 
 	srv := &http.Server{
@@ -56,14 +67,6 @@ func main() {
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
-
-	// setup postgres database connection
-	app.logger.Println("Opening database connection using pgxpool")
-	connPool, err := openDBConnPool(cfg)
-	if err != nil {
-		app.logger.Fatal(err)
-	}
-	defer connPool.Close()
 
 	app.logger.Printf("Starting %s on port: %d", cfg.env, cfg.port)
 	if err := srv.ListenAndServe(); err != nil {
