@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -42,8 +43,13 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		app.serverErrorResponse(w, r, err)
 	}
 
+	// After created the movie in database, set the header to include a "Location"
+	// so that later the client know where to get the newly created movie
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/movies/%d", movie.ID))
+
 	// Write back to client success response
-	if err := app.writeJSON(w, http.StatusCreated, envelop{"movie": movie}, nil); err != nil {
+	if err := app.writeJSON(w, http.StatusCreated, envelop{"movie": movie}, headers); err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }
