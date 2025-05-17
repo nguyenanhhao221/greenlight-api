@@ -56,7 +56,7 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (app *application) showMovieHanlder(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readParams(r)
+	id, err := app.readIDParams(r)
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
