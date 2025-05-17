@@ -1,9 +1,10 @@
 package main
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/nguyenanhhao221/greenlight-api/internal/data"
 	"github.com/nguyenanhhao221/greenlight-api/internal/validator"
@@ -61,16 +62,18 @@ func (app *application) showMovieHanlder(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	movieData := data.Movie{
-		ID:        id,
-		CreatedAt: time.Now(),
-		Title:     "Batman",
-		Runtime:   102,
-		Genres:    []string{"superhero", "fiction"},
-		Version:   1,
+	// Get movie from database
+	movie, err := app.models.Movie.Get(id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			app.notFoundResponse(w, r)
+			return
+		}
+		app.serverErrorResponse(w, r, err)
+		return
 	}
 
-	if err := app.writeJSON(w, http.StatusOK, envelop{"movie": movieData}, nil); err != nil {
+	if err := app.writeJSON(w, http.StatusOK, envelop{"movie": movie}, nil); err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }

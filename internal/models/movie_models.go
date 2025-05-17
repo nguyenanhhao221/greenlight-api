@@ -21,3 +21,22 @@ func (m *MovieModel) Create(movie *data.Movie) error {
 
 	return m.DB.QueryRow(context.Background(), query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
+
+func (m *MovieModel) Get(id int64) (data.Movie, error) {
+	query := `
+	SELECT id, created_at, title, year, runtime, genres, version FROM movies
+	WHERE id=$1;
+	`
+	movie := data.Movie{}
+
+	err := m.DB.QueryRow(context.Background(), query, id).Scan(
+		&movie.ID,
+		&movie.CreatedAt,
+		&movie.Title,
+		&movie.Year,
+		&movie.Runtime,
+		&movie.Genres,
+		&movie.Version,
+	)
+	return movie, err
+}
