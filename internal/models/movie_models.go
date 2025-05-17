@@ -22,7 +22,11 @@ func (m *MovieModel) Create(movie *data.Movie) error {
 	return m.DB.QueryRow(context.Background(), query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
 
-func (m *MovieModel) Get(id int64) (data.Movie, error) {
+func (m *MovieModel) Get(id int64) (*data.Movie, error) {
+	if id < 1 {
+		return nil, ErrRecordNotFound
+	}
+
 	query := `
 	SELECT id, created_at, title, year, runtime, genres, version FROM movies
 	WHERE id=$1;
@@ -38,5 +42,5 @@ func (m *MovieModel) Get(id int64) (data.Movie, error) {
 		&movie.Genres,
 		&movie.Version,
 	)
-	return movie, err
+	return &movie, err
 }

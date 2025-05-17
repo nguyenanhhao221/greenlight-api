@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/nguyenanhhao221/greenlight-api/internal/data"
+	"github.com/nguyenanhhao221/greenlight-api/internal/models"
 	"github.com/nguyenanhhao221/greenlight-api/internal/validator"
 )
 
@@ -64,7 +65,7 @@ func (app *application) showMovieHanlder(w http.ResponseWriter, r *http.Request)
 	// Get movie from database
 	movie, err := app.models.Movie.Get(id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, models.ErrRecordNotFound) {
 			app.notFoundResponse(w, r)
 			return
 		}
