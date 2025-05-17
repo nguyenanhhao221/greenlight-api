@@ -77,3 +77,59 @@ func (app *application) showMovieHanlder(w http.ResponseWriter, r *http.Request)
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readIDParams(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	// Get movie from database
+	movie, err := app.models.Movie.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrRecordNotFound) {
+			app.notFoundResponse(w, r)
+			return
+		}
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	var movieInputData struct {
+		Title   string       `json:"title"`   // Movie title
+		Year    int32        `json:"year"`    // Movie release year
+		Runtime data.Runtime `json:"runtime"` // Movie run time (in minutes)
+		Genres  []string     `json:"genres"`  // Slice of genres for the movie (romance, comedy, etc.)
+	}
+
+	err = app.readJSON(w, r, &movieInputData)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	// Update the field from movie db with user input
+	movie.Title = movieInputData.Title
+	movie.Year = movieInputData.Year
+	movie.Runtime = movieInputData.Runtime
+	movie.Genres = movieInputData.Genres
+
+	// Validate user input
+	validator := validator.New()
+	if data.ValidateMovie(validator, movie); !validator.Valid() {
+		app.failValidationResponse(w, r, validator.Errors)
+		return
+	}
+
+	// Update movie to database
+	err = app.models.Movie.Update(movie)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if err := app.writeJSON(w, http.StatusCreated, envelop{"movie": movie}, nil); err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
