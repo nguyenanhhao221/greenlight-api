@@ -51,15 +51,22 @@ func (m *MovieModel) Get(id int64) (*data.Movie, error) {
 }
 
 func (m *MovieModel) Update(movie *data.Movie) error {
+	// Use version to prevent data race condition to update. This can be consider as optimistic locking
 	query := `
 		UPDATE movies 
 		SET title = $1, year = $2, runtime = $3, genres = $4, version = version + 1
-		WHERE id = $5
+		WHERE id = $5 AND version = $6
 		RETURNING version;
 	`
-	args := []any{movie.Title, movie.Year, movie.Runtime, movie.Genres, movie.ID}
+	args := []any{movie.Title, movie.Year, movie.Runtime, movie.Genres, movie.ID, movie.Version}
 
-	return m.DB.QueryRow(context.Background(), query, args...).Scan(&movie.Version)
+	if err := m.DB.QueryRow(context.Background(), query, args...).Scan(&movie.Version); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrEditConflict
+		}
+		return err
+	}
+	return nil
 }
 
 func (m *MovieModel) Delete(id int64) error {

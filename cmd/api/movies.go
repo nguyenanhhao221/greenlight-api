@@ -135,6 +135,10 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 	// Update movie to database
 	err = app.models.Movie.Update(movie)
 	if err != nil {
+		if errors.Is(err, models.ErrEditConflict) {
+			app.editConflictResponse(w,r)
+			return
+		}
 		app.serverErrorResponse(w, r, err)
 		return
 	}
