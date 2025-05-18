@@ -96,11 +96,12 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// We use pointers here for the input in order to support partial update
 	var movieInputData struct {
-		Title   string       `json:"title"`   // Movie title
-		Year    int32        `json:"year"`    // Movie release year
-		Runtime data.Runtime `json:"runtime"` // Movie run time (in minutes)
-		Genres  []string     `json:"genres"`  // Slice of genres for the movie (romance, comedy, etc.)
+		Title   *string       `json:"title"`   // Movie title
+		Year    *int32        `json:"year"`    // Movie release year
+		Runtime *data.Runtime `json:"runtime"` // Movie run time (in minutes)
+		Genres  []string      `json:"genres"`  // Slice of genres for the movie (romance, comedy, etc.)
 	}
 
 	err = app.readJSON(w, r, &movieInputData)
@@ -109,12 +110,21 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Update the field from movie db with user input
-	movie.Title = movieInputData.Title
-	movie.Year = movieInputData.Year
-	movie.Runtime = movieInputData.Runtime
-	movie.Genres = movieInputData.Genres
+	if movieInputData.Title != nil {
+		movie.Title = *movieInputData.Title
+	}
 
+	if movieInputData.Year != nil {
+		movie.Year = *movieInputData.Year
+	}
+
+	if movieInputData.Runtime != nil {
+		movie.Runtime = *movieInputData.Runtime
+	}
+
+	if movieInputData.Genres != nil {
+		movie.Genres = movieInputData.Genres
+	}
 	// Validate user input
 	validator := validator.New()
 	if data.ValidateMovie(validator, movie); !validator.Valid() {
