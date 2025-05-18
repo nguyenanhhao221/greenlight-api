@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nguyenanhhao221/greenlight-api/internal/data"
@@ -52,16 +51,6 @@ func (m *MovieModel) Get(id int64) (*data.Movie, error) {
 }
 
 func (m *MovieModel) Update(movie *data.Movie) error {
-	tx, txErr := m.DB.Begin(context.Background())
-	if txErr != nil {
-		return txErr
-	}
-	defer func() {
-		rollbackErr := tx.Rollback(context.Background())
-		if rollbackErr != nil {
-			log.Printf("error Rollback, Update MovieModel %v\n", rollbackErr)
-		}
-	}()
 	query := `
 		UPDATE movies 
 		SET title = $1, year = $2, runtime = $3, genres = $4, version = version + 1
@@ -70,11 +59,7 @@ func (m *MovieModel) Update(movie *data.Movie) error {
 	`
 	args := []any{movie.Title, movie.Year, movie.Runtime, movie.Genres, movie.ID}
 
-	err := tx.QueryRow(context.Background(), query, args...).Scan(&movie.Version)
-	if err != nil {
-		return err
-	}
-	return tx.Commit(context.Background())
+	return m.DB.QueryRow(context.Background(), query, args...).Scan(&movie.Version)
 }
 
 func (m *MovieModel) Delete(id int64) error {
