@@ -13,7 +13,7 @@ type MovieModel struct {
 	DB *pgxpool.Pool
 }
 
-func (m *MovieModel) Create(movie *data.Movie) error {
+func (m MovieModel) Create(movie *data.Movie) error {
 	query := `
 		INSERT INTO movies (title, year, runtime, genres)
 		VALUES ($1, $2, $3, $4)
@@ -24,7 +24,31 @@ func (m *MovieModel) Create(movie *data.Movie) error {
 	return m.DB.QueryRow(context.Background(), query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
 
-func (m *MovieModel) Get(id int64) (*data.Movie, error) {
+func (m MovieModel) GetAll() ([]data.Movie, error) {
+	query := `SELECT id, created_at, title, year, runtime, genres, version FROM movies;`
+	var movies []data.Movie
+
+	movie := data.Movie{}
+	rows, err := m.DB.Query(context.Background(), query)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&movie.ID, &movie.CreatedAt, &movie.Title, &movie.Year, &movie.Runtime, &movie.Genres, &movie.Version)
+		if err != nil {
+			return nil, err
+		}
+		movies = append(movies, movie)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return movies, nil
+}
+
+func (m MovieModel) Get(id int64) (*data.Movie, error) {
 	if id < 1 {
 		return nil, ErrRecordNotFound
 	}
@@ -69,7 +93,7 @@ func (m *MovieModel) Update(movie *data.Movie) error {
 	return nil
 }
 
-func (m *MovieModel) Delete(id int64) error {
+func (m MovieModel) Delete(id int64) error {
 	query := `DELETE FROM movies WHERE id = $1`
 	result, err := m.DB.Exec(context.Background(), query, id)
 	if result.RowsAffected() == 0 {

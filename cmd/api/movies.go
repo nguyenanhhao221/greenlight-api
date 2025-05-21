@@ -10,6 +10,17 @@ import (
 	"github.com/nguyenanhhao221/greenlight-api/internal/validator"
 )
 
+func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request) {
+	movies, err := app.models.Movie.GetAll()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	if err := app.writeJSON(w, http.StatusOK, envelop{"movies": movies}, nil); err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
 	var movieInputData struct {
 		Title   string       `json:"title"`   // Movie title
@@ -136,7 +147,7 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 	err = app.models.Movie.Update(movie)
 	if err != nil {
 		if errors.Is(err, models.ErrEditConflict) {
-			app.editConflictResponse(w,r)
+			app.editConflictResponse(w, r)
 			return
 		}
 		app.serverErrorResponse(w, r, err)
