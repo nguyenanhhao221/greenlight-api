@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nguyenanhhao221/greenlight-api/internal/data"
@@ -21,7 +22,10 @@ func (m MovieModel) Create(movie *data.Movie) error {
 	`
 	args := []any{movie.Title, movie.Year, movie.Runtime, movie.Genres}
 
-	return m.DB.QueryRow(context.Background(), query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return m.DB.QueryRow(ctxWithTimeout, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
 
 func (m MovieModel) GetAll() ([]data.Movie, error) {
@@ -52,14 +56,15 @@ func (m MovieModel) Get(id int64) (*data.Movie, error) {
 	if id < 1 {
 		return nil, ErrRecordNotFound
 	}
-
 	query := `
 	SELECT id, created_at, title, year, runtime, genres, version FROM movies
 	WHERE id=$1;
 	`
 	movie := data.Movie{}
 
-	err := m.DB.QueryRow(context.Background(), query, id).Scan(
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	err := m.DB.QueryRow(ctxWithTimeout, query, id).Scan(
 		&movie.ID,
 		&movie.CreatedAt,
 		&movie.Title,
@@ -84,7 +89,10 @@ func (m *MovieModel) Update(movie *data.Movie) error {
 	`
 	args := []any{movie.Title, movie.Year, movie.Runtime, movie.Genres, movie.ID, movie.Version}
 
-	if err := m.DB.QueryRow(context.Background(), query, args...).Scan(&movie.Version); err != nil {
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if err := m.DB.QueryRow(ctxWithTimeout, query, args...).Scan(&movie.Version); err != nil {
+
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrEditConflict
 		}
@@ -95,7 +103,11 @@ func (m *MovieModel) Update(movie *data.Movie) error {
 
 func (m MovieModel) Delete(id int64) error {
 	query := `DELETE FROM movies WHERE id = $1`
-	result, err := m.DB.Exec(context.Background(), query, id)
+
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.Exec(ctxWithTimeout, query, id)
 	if result.RowsAffected() == 0 {
 		return ErrRecordNotFound
 	}
