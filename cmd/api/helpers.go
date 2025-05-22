@@ -24,6 +24,9 @@ func (app *application) readString(qs url.Values, key string, defaultValue strin
 	return defaultValue
 }
 
+// readCommaQuery helper reads a string value from the query string and then splits it
+// into a slice on the comma character. If no matching key could be found, it returns
+// the provided default value.
 func (app *application) readCommaQuery(qs url.Values, key string, defaultValue []string) []string {
 	s := qs.Get(key)
 	if s != "" {
