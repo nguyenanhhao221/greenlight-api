@@ -14,13 +14,23 @@ func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request
 	var input struct {
 		Title  string
 		Genres []string
+		data.Filters
 	}
+
+	v := validator.New()
 
 	qs := r.URL.Query()
 	input.Title = app.readString(qs, "title", "")
 	input.Genres = app.readCommaQuery(qs, "genres", []string{})
+	input.Page = app.readInt(qs, "page", 0, v)
+	input.PageSize = app.readInt(qs, "page_size", 20, v)
+	fmt.Printf("%+v\n", input)
 
-	movies, err := app.models.Movie.GetAll(input.Title, input.Genres)
+	if !v.Valid() {
+		app.failValidationResponse(w, r, v.Errors)
+		return
+	}
+	movies, err := app.models.Movie.GetAll(input.Title, input.Genres, input.Filters)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

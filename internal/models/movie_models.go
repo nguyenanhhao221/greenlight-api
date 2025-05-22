@@ -28,20 +28,21 @@ func (m MovieModel) Create(movie *data.Movie) error {
 	return m.DB.QueryRow(ctxWithTimeout, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
 
-func (m MovieModel) GetAll(title string, genres []string) ([]data.Movie, error) {
+func (m MovieModel) GetAll(title string, genres []string, filters data.Filters) ([]data.Movie, error) {
 	query := `
 		SELECT id, created_at, title, year, runtime, genres, version 
 		FROM movies
 		WHERE (LOWER(title) = LOWER($1) or $1 = '')
 		AND (genres @> $2 or $2 = '{}')
-		ORDER BY id;
+		ORDER BY id
+		LIMIT $3 OFFSET $4;
 	`
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	movie := data.Movie{}
 	var movies []data.Movie
-	rows, err := m.DB.Query(ctx, query, title, genres)
+	rows, err := m.DB.Query(ctx, query, title, genres, filters.PageSize, filters.Page)
 	if err != nil {
 		return nil, err
 	}

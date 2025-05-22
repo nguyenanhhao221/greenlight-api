@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/nguyenanhhao221/greenlight-api/internal/validator"
 )
 
 // readString help return the string value base on the key in the query string, if key not exists return the defaultValue
@@ -20,6 +21,20 @@ func (app *application) readString(qs url.Values, key string, defaultValue strin
 
 	if s != "" {
 		return s
+	}
+	return defaultValue
+}
+
+func (app *application) readInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
+	s := qs.Get(key)
+
+	if s != "" {
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			v.AddError(key, "must be an integer value")
+			return defaultValue
+		}
+		return i
 	}
 	return defaultValue
 }
