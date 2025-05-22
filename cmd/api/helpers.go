@@ -7,11 +7,31 @@ import (
 	"io"
 	"maps"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
 )
+
+// readString help return the string value base on the key in the query string, if key not exists return the defaultValue
+func (app *application) readString(qs url.Values, key string, defaultValue string) string {
+	s := qs.Get(key)
+
+	if s != "" {
+		return s
+	}
+	return defaultValue
+}
+
+func (app *application) readCommaQuery(qs url.Values, key string, defaultValue []string) []string {
+	s := qs.Get(key)
+	if s != "" {
+		splitSlice := strings.Split(s, ",")
+		return splitSlice
+	}
+	return defaultValue
+}
 
 func (app *application) readIDParams(r *http.Request) (int64, error) {
 	params := httprouter.ParamsFromContext(r.Context())
