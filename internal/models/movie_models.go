@@ -45,7 +45,7 @@ func (m MovieModel) GetAll(title string, genres []string, filters data.Filters) 
 
 	totalRecords := 0
 	movie := data.Movie{}
-	var movies []data.Movie
+	movies := make([]data.Movie, 0)
 	rows, err := m.DB.Query(ctx, query, title, genres, filters.Limit(), filters.Offset())
 	if err != nil {
 		return nil, data.Metadata{}, err
