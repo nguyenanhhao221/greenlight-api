@@ -34,7 +34,7 @@ func (m MovieModel) GetAll(title string, genres []string, filters data.Filters) 
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER() AS count, id, created_at, title, year, runtime, genres, version	
 		FROM movies
-		WHERE (LOWER(title) = LOWER($1) or $1 = '')
+		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) or $1 = '')
 			AND (genres @> $2 or $2 = '{}')
 		ORDER BY %s %s, id ASC
 		LIMIT $3 OFFSET $4;`,
