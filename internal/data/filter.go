@@ -9,6 +9,6 @@ func (f Filters) Limit() int {
 }
 
 func (f Filters) Offset() int {
-	return f.PageSize
+	return f.Page
 }
 
