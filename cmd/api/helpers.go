@@ -84,7 +84,7 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data any, h
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if _, err := w.Write([]byte(js)); err != nil {
-		app.logger.PrintError(err, nil)
+		app.logger.Error(err.Error())
 		return err
 	}
 	return nil

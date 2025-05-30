@@ -6,7 +6,8 @@ import (
 )
 
 func (app *application) logError(r *http.Request, err error) {
-	app.logger.PrintError(err, map[string]string{"request_method": r.Method, "request_url": r.URL.String()})
+	errLogger := app.logger.With("request_url", r.URL.String(), "request_method", r.Method)
+	errLogger.Error(err.Error())
 }
 
 // The errorResponse() method is a generic helper for sending JSON-formatted error
