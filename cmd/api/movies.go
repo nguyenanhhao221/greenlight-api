@@ -17,17 +17,19 @@ func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request
 		data.Filters
 	}
 
-	v := validator.New()
+	validator := validator.New()
 
 	qs := r.URL.Query()
 	input.Title = app.readString(qs, "title", "")
 	input.Genres = app.readCommaQuery(qs, "genres", []string{})
-	input.Page = app.readInt(qs, "page", 1, v)
-	input.PageSize = app.readInt(qs, "page_size", 20, v)
+	input.Page = app.readInt(qs, "page", 1, validator)
+	input.PageSize = app.readInt(qs, "page_size", 20, validator)
+	input.Sort = app.readString(qs, "sort", "id")
+	input.SortSafeList = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
 	fmt.Printf("%+v\n", input)
 
-	if !v.Valid() {
-		app.failValidationResponse(w, r, v.Errors)
+	if data.ValidateFilters(validator, input.Filters); !validator.Valid() {
+		app.failValidationResponse(w, r, validator.Errors)
 		return
 	}
 	movies, err := app.models.Movie.GetAll(input.Title, input.Genres, input.Filters)

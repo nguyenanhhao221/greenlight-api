@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -29,14 +30,16 @@ func (m MovieModel) Create(movie *data.Movie) error {
 }
 
 func (m MovieModel) GetAll(title string, genres []string, filters data.Filters) ([]data.Movie, error) {
-	query := `
+	query := fmt.Sprintf(`
 		SELECT id, created_at, title, year, runtime, genres, version 
-		FROM movies
-		WHERE (LOWER(title) = LOWER($1) or $1 = '')
-		AND (genres @> $2 or $2 = '{}')
-		ORDER BY id
-		LIMIT $3 OFFSET $4;
-	`
+		FROM movies 
+		WHERE (LOWER(title) = LOWER($1) or $1 = '') 
+			AND (genres @> $2 or $2 = '{}') 
+		ORDER BY %s %s, id ASC 
+		LIMIT $3 OFFSET $4;`,
+		filters.SortColumn(), filters.SortDirection(),
+	)
+	fmt.Println(query)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
