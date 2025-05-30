@@ -22,7 +22,7 @@ func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request
 	qs := r.URL.Query()
 	input.Title = app.readString(qs, "title", "")
 	input.Genres = app.readCommaQuery(qs, "genres", []string{})
-	input.Page = app.readInt(qs, "page", 0, v)
+	input.Page = app.readInt(qs, "page", 1, v)
 	input.PageSize = app.readInt(qs, "page_size", 20, v)
 	fmt.Printf("%+v\n", input)
 
