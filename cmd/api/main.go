@@ -4,12 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nguyenanhhao221/greenlight-api/internal/jsonlog"
 	"github.com/nguyenanhhao221/greenlight-api/internal/models"
 )
 
@@ -27,7 +27,7 @@ type config struct {
 }
 type application struct {
 	config config
-	logger *log.Logger
+	logger *jsonlog.Logger
 	models models.Models
 }
 
@@ -44,13 +44,13 @@ func main() {
 	flag.Parse()
 
 	// Setup our own logger
-	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
 	// setup postgres database connection
-	logger.Println("Opening database connection using pgxpool")
+	logger.Info("Opening database connection using pgxpool", nil)
 	connPool, err := openDBConnPool(cfg)
 	if err != nil {
-		logger.Fatal(err)
+		logger.PrintFatal(err, nil)
 	}
 	defer connPool.Close()
 
@@ -68,9 +68,9 @@ func main() {
 		WriteTimeout: 30 * time.Second,
 	}
 
-	app.logger.Printf("Starting %s on port: %d", cfg.env, cfg.port)
+	app.logger.Info("Starting server", map[string]string{"env": cfg.env, "address": srv.Addr})
 	if err := srv.ListenAndServe(); err != nil {
-		app.logger.Fatal(err)
+		app.logger.PrintFatal(err, nil)
 	}
 }
 
