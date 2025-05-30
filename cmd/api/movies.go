@@ -26,7 +26,6 @@ func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request
 	input.PageSize = app.readInt(qs, "page_size", 20, validator)
 	input.Sort = app.readString(qs, "sort", "id")
 	input.SortSafeList = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
-	fmt.Printf("%+v\n", input)
 
 	if data.ValidateFilters(validator, input.Filters); !validator.Valid() {
 		app.failValidationResponse(w, r, validator.Errors)

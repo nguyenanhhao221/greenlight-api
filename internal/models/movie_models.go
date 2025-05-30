@@ -40,7 +40,6 @@ func (m MovieModel) GetAll(title string, genres []string, filters data.Filters) 
 		LIMIT $3 OFFSET $4;`,
 		filters.SortColumn(), filters.SortDirection(),
 	)
-	fmt.Println(query)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
