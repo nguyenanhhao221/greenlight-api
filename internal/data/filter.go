@@ -2,6 +2,7 @@ package data
 
 import (
 	"math"
+	"slices"
 	"strings"
 
 	"github.com/nguyenanhhao221/greenlight-api/internal/validator"
@@ -31,11 +32,10 @@ func (f Filters) Offset() int {
 }
 
 func (f Filters) SortColumn() string {
-	if after, found := strings.CutPrefix(f.Sort, "-"); found {
-		return after
-	} else {
-		return f.Sort
+	if slices.Contains(f.SortSafeList, f.Sort) {
+		return strings.TrimPrefix(f.Sort, "-")
 	}
+	panic("unsafe sort parameter: " + f.Sort)
 }
 
 func (f Filters) SortDirection() string {
@@ -54,7 +54,6 @@ func ValidateFilters(v *validator.Validator, f Filters) {
 
 	v.Check(v.In(f.Sort, f.SortSafeList), "sort", "invalid sort value")
 }
-
 
 func CalculateMetadata(totalRecords, page, pageSize int) Metadata {
 	if totalRecords == 0 {
