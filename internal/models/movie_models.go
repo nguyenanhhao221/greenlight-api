@@ -29,13 +29,14 @@ func (m MovieModel) Create(movie *data.Movie) error {
 	return m.DB.QueryRow(ctxWithTimeout, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 }
 
-func (m MovieModel) GetAll(title string, genres []string, filters data.Filters) ([]data.Movie, error) {
+func (m MovieModel) GetAll(title string, genres []string, filters data.Filters) ([]data.Movie, data.Metadata, error) {
+	// Use COUNT(*) OVER() to get total count along with the result rows
 	query := fmt.Sprintf(`
-		SELECT id, created_at, title, year, runtime, genres, version 
-		FROM movies 
-		WHERE (LOWER(title) = LOWER($1) or $1 = '') 
-			AND (genres @> $2 or $2 = '{}') 
-		ORDER BY %s %s, id ASC 
+		SELECT COUNT(*) OVER() AS count, id, created_at, title, year, runtime, genres, version	
+		FROM movies
+		WHERE (LOWER(title) = LOWER($1) or $1 = '')
+			AND (genres @> $2 or $2 = '{}')
+		ORDER BY %s %s, id ASC
 		LIMIT $3 OFFSET $4;`,
 		filters.SortColumn(), filters.SortDirection(),
 	)
@@ -43,25 +44,26 @@ func (m MovieModel) GetAll(title string, genres []string, filters data.Filters) 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	totalRecords := 0
 	movie := data.Movie{}
 	var movies []data.Movie
 	rows, err := m.DB.Query(ctx, query, title, genres, filters.Limit(), filters.Offset())
 	if err != nil {
-		return nil, err
+		return nil, data.Metadata{}, err
 	}
 	for rows.Next() {
-		err := rows.Scan(&movie.ID, &movie.CreatedAt, &movie.Title, &movie.Year, &movie.Runtime, &movie.Genres, &movie.Version)
+		err := rows.Scan(&totalRecords, &movie.ID, &movie.CreatedAt, &movie.Title, &movie.Year, &movie.Runtime, &movie.Genres, &movie.Version)
 		if err != nil {
-			return nil, err
+			return nil, data.Metadata{}, err
 		}
 		movies = append(movies, movie)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, data.Metadata{}, err
 	}
 
-	return movies, nil
+	return movies, data.CalculateMetadata(totalRecords, filters.Page, filters.PageSize), nil
 }
 
 func (m MovieModel) Get(id int64) (*data.Movie, error) {
