@@ -18,7 +18,7 @@ func (f Filters) Limit() int {
 }
 
 func (f Filters) Offset() int {
-	return f.Page
+	return (f.Page - 1) * f.PageSize
 }
 
 func (f Filters) SortColumn() string {
