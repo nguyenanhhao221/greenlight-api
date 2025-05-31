@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"golang.org/x/time/rate"
 )
@@ -23,10 +24,30 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 }
 
 func (app *application) rateLimitMiddleware(next http.Handler) http.Handler {
+	// Declare variable here will make the return function closure , it kept the reference to these variable
+	type client struct {
+		limiter  *rate.Limiter
+		lastSeen time.Time
+	}
 	var (
 		mu      sync.Mutex
-		clients = make(map[string]*rate.Limiter)
+		clients = make(map[string]*client)
 	)
+
+	// launch a background go routine that run every minute and check if last seen is more than 3 minutes and perform clean up
+	go func() {
+		for {
+			time.Sleep(time.Minute)
+			mu.Lock()
+			for ip, client := range clients {
+				if time.Since(client.lastSeen) > 3*time.Minute {
+					delete(clients, ip)
+				}
+			}
+			mu.Unlock()
+		}
+	}()
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Split to get the IP address for ip base rate limit
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
@@ -39,9 +60,12 @@ func (app *application) rateLimitMiddleware(next http.Handler) http.Handler {
 		mu.Lock()
 		_, found := clients[ip]
 		if !found {
-			clients[ip] = rate.NewLimiter(2, 4)
+			clients[ip] = &client{
+				limiter: rate.NewLimiter(2, 4),
+			}
 		}
-		if clients[ip].Allow() {
+		clients[ip].lastSeen = time.Now()
+		if clients[ip].limiter.Allow() {
 			mu.Unlock()
 			next.ServeHTTP(w, r)
 		} else {
