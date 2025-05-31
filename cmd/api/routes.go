@@ -26,7 +26,6 @@ func (app *application) routes() http.Handler {
 
 	// Users routes
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.createUserHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/users/me", app.GetUserByEmailHandler)
 
 	return app.recoverPanic(app.rateLimitMiddleware(router))
 }

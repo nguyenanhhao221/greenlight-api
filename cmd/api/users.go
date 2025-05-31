@@ -52,14 +52,3 @@ func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 }
-
-// GetUserByEmailHandler retrieves a user record by email address
-func (app *application) GetUserByEmailHandler(w http.ResponseWriter, r *http.Request) {
-	email := r.URL.Query().Get("email")
-
-	user, err := app.models.User.GetByEmail(email)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-}
