@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"time"
 
@@ -69,17 +67,7 @@ func main() {
 		models: models.New(connPool), // set up basic model for database access layer
 	}
 
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      app.routes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		ErrorLog:     slog.NewLogLogger(slog.NewTextHandler(os.Stderr, nil), slog.LevelError),
-	}
-
-	app.logger.Info("Starting server", "Address", srv.Addr, "environment", cfg.env, "limiter", cfg.limiter)
-	if err := srv.ListenAndServe(); err != nil {
+	if err := app.serve(); err != nil {
 		app.logger.Error(err.Error())
 		os.Exit(1)
 	}
