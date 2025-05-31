@@ -24,6 +24,11 @@ type config struct {
 		maxOpenConns int
 		maxIdleTime  time.Duration
 	}
+	limiter struct {
+		rps     float64
+		burst   int
+		enabled bool
+	}
 }
 type application struct {
 	config config
@@ -40,6 +45,9 @@ func main() {
 	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgres://greenlight@localhost/greenlight", "PostgreSQL DSN")
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conn", 25, "Max open connection pool for postgres database")
 	flag.DurationVar(&cfg.db.maxIdleTime, "db-max-idle-time", 15*time.Minute, "the duration after which an idle connection will be automatically closed by the health check")
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum request per second")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
+	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 
 	flag.Parse()
 
@@ -70,7 +78,7 @@ func main() {
 		ErrorLog:     slog.NewLogLogger(slog.NewTextHandler(os.Stderr, nil), slog.LevelError),
 	}
 
-	app.logger.Info("Starting server", "Address", srv.Addr, "environment", cfg.env)
+	app.logger.Info("Starting server", "Address", srv.Addr, "environment", cfg.env, "limiter", cfg.limiter)
 	if err := srv.ListenAndServe(); err != nil {
 		app.logger.Error(err.Error())
 		os.Exit(1)

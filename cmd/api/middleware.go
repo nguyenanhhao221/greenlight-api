@@ -49,29 +49,30 @@ func (app *application) rateLimitMiddleware(next http.Handler) http.Handler {
 	}()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Split to get the IP address for ip base rate limit
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-
-		// Prevent concurrent access to the map
-		mu.Lock()
-		_, found := clients[ip]
-		if !found {
-			clients[ip] = &client{
-				limiter: rate.NewLimiter(2, 4),
+		if app.config.limiter.enabled {
+			// Split to get the IP address for ip base rate limit
+			ip, _, err := net.SplitHostPort(r.RemoteAddr)
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
 			}
-		}
-		clients[ip].lastSeen = time.Now()
-		if clients[ip].limiter.Allow() {
+
+			// Prevent concurrent access to the map
+			mu.Lock()
+			_, found := clients[ip]
+			if !found {
+				clients[ip] = &client{
+					limiter: rate.NewLimiter(rate.Limit(app.config.limiter.rps), app.config.limiter.burst),
+				}
+			}
+			clients[ip].lastSeen = time.Now()
+			if !clients[ip].limiter.Allow() {
+				mu.Unlock()
+				app.rateLimitExceededResponse(w, r)
+				return
+			}
 			mu.Unlock()
-			next.ServeHTTP(w, r)
-		} else {
-			mu.Unlock()
-			app.rateLimitExceededResponse(w, r)
-			return
 		}
+		next.ServeHTTP(w, r)
 	})
 }
