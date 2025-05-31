@@ -45,3 +45,7 @@ func (v *Validator) Valid() bool {
 func (v *Validator) In(value string, list []string) bool {
 	return slices.Contains(list, value)
 }
+
+func Matches(userEmail string, rx *regexp.Regexp) bool {
+	return rx.MatchString(userEmail)
+}

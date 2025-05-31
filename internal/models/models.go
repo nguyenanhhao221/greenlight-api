@@ -7,16 +7,19 @@ import (
 )
 
 var (
-	ErrRecordNotFound = errors.New("record not found") 
-	ErrEditConflict = errors.New("edit conflict") 
+	ErrRecordNotFound = errors.New("record not found")
+	ErrEditConflict   = errors.New("edit conflict")
+	ErrDuplicateEmail = errors.New("duplicate email")
 )
 
 type Models struct {
 	Movie MovieModel
+	User  UserModel
 }
 
 func New(db *pgxpool.Pool) Models {
 	return Models{
 		Movie: MovieModel{DB: db},
+		User:  UserModel{DB: db},
 	}
 }

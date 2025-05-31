@@ -23,5 +23,10 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/movies/:id", app.showMovieHanlder)
 	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", app.updateMovieHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", app.deleteMovieHandler)
+
+	// Users routes
+	router.HandlerFunc(http.MethodPost, "/v1/users", app.createUserHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/users/me", app.GetUserByEmailHandler)
+
 	return app.recoverPanic(app.rateLimitMiddleware(router))
 }
