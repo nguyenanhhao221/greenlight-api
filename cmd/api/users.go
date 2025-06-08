@@ -46,6 +46,14 @@ func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request
 		app.serverErrorResponse(w, r, err)
 		return
 	}
+
+	// Send welcome email to user
+	app.logger.Info("Create user successfully, sending welcome email!")
+	err = app.mailer.Send(*user, "user_welcome.tmpl")
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+
 	err = app.writeJSON(w, http.StatusCreated, envelop{"user": user}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

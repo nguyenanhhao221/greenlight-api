@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
+	"github.com/nguyenanhhao221/greenlight-api/internal/mailer"
 	"github.com/nguyenanhhao221/greenlight-api/internal/models"
 )
 
@@ -27,14 +29,33 @@ type config struct {
 		burst   int
 		enabled bool
 	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 type application struct {
 	config config
 	logger *slog.Logger
 	models models.Models
+	mailer *mailer.Mailer
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		slog.Error("Error loading .env file")
+		os.Exit(1)
+	}
+	mailPassword := os.Getenv("MAIL_SERVER_PASSWORD")
+	if mailPassword == "" {
+		slog.Error("need to set environment variable: MAIL_SERVER_PASSWORD")
+		os.Exit(1)
+	}
+
 	var cfg config
 
 	// Get server config via cli flag
@@ -46,7 +67,12 @@ func main() {
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum request per second")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
-
+	// Setup for smtp configuration, credential need to be set up via MailTrap
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "633e69db2a27b2", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", mailPassword, "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "hao@haonguyen.tech", "SMTP sender")
 	flag.Parse()
 
 	// Initialize default slog
@@ -61,10 +87,16 @@ func main() {
 	}
 	defer connPool.Close()
 
+	mailer, err := mailer.New(cfg.smtp.host, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender)
+	if err != nil {
+		slog.Error("error setting up mailer: ", "err:", err.Error())
+		os.Exit(1)
+	}
 	app := &application{
 		config: cfg,
 		logger: slogger,
 		models: models.New(connPool), // set up basic model for database access layer
+		mailer: mailer,
 	}
 
 	if err := app.serve(); err != nil {
