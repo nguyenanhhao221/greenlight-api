@@ -172,3 +172,15 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 func (app *application) failValidationResponse(w http.ResponseWriter, r *http.Request, err map[string]string) {
 	app.errorResponse(w, r, http.StatusUnprocessableEntity, err)
 }
+
+// background is a helper to execute [fn] as go routine. Any panic in [fn] inside the go routine will be recover by background
+func (app *application) background(fn func()) {
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				app.logger.Error(fmt.Errorf("%s", err).Error())
+			}
+		}()
+	}()
+	fn()
+}
