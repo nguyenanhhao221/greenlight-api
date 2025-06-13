@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -42,6 +43,7 @@ type application struct {
 	logger *slog.Logger
 	models models.Models
 	mailer *mailer.Mailer
+	wg     sync.WaitGroup // For shutdown background go routine gracefully
 }
 
 func main() {

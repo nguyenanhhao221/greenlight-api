@@ -175,7 +175,12 @@ func (app *application) failValidationResponse(w http.ResponseWriter, r *http.Re
 
 // background is a helper to execute [fn] as go routine. Any panic in [fn] inside the go routine will be recover by background
 func (app *application) background(fn func()) {
+	// Use wait group to gracefully shutdown background job
+	app.wg.Add(1)
+
 	go func() {
+		defer app.wg.Done()
+
 		defer func() {
 			if err := recover(); err != nil {
 				app.logger.Error(fmt.Errorf("%s", err).Error())
