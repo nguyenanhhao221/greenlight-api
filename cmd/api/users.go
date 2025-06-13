@@ -54,6 +54,7 @@ func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request
 		if err != nil {
 			app.logger.Error("Error sending user to", "user: email", user.Email)
 		}
+		app.logger.Info("Email sent successfully for:", "user email", user.Email)
 	})
 
 	err = app.writeJSON(w, http.StatusCreated, envelop{"user": user}, nil)
