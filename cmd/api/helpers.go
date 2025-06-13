@@ -181,6 +181,6 @@ func (app *application) background(fn func()) {
 				app.logger.Error(fmt.Errorf("%s", err).Error())
 			}
 		}()
+		fn()
 	}()
-	fn()
 }
