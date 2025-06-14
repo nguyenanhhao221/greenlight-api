@@ -15,11 +15,13 @@ var (
 type Models struct {
 	Movie MovieModel
 	User  UserModel
+	Token TokenModel
 }
 
 func New(db *pgxpool.Pool) Models {
 	return Models{
 		Movie: MovieModel{DB: db},
 		User:  UserModel{DB: db},
+		Token: TokenModel{DB: db},
 	}
 }

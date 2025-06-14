@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/nguyenanhhao221/greenlight-api/internal/data"
 	"github.com/wneessen/go-mail"
 )
 
@@ -30,13 +29,13 @@ func New(host, username, password, sender string) (*Mailer, error) {
 	}, nil
 }
 
-func (m Mailer) Send(user data.User, templateFile string) error {
+func (m Mailer) Send(userEmail string, templateFile string, data map[string]any) error {
 	message := mail.NewMsg()
 	if err := message.From(m.sender); err != nil {
 		log.Printf("failed to set From address: %s\n", err)
 		return err
 	}
-	if err := message.To(user.Email); err != nil {
+	if err := message.To(userEmail); err != nil {
 		log.Printf("failed to set To address: %s\n", err)
 		return err
 	}
@@ -59,7 +58,7 @@ func (m Mailer) Send(user data.User, templateFile string) error {
 
 	// Set the email plainBody from the tmpl
 	plainBody := new(bytes.Buffer)
-	err = tmpl.ExecuteTemplate(plainBody, "plainBody", user)
+	err = tmpl.ExecuteTemplate(plainBody, "plainBody", data)
 	if err != nil {
 		log.Printf("failed to ExecuteTemplate for plainBody: %s\n", err)
 		return err
@@ -68,7 +67,7 @@ func (m Mailer) Send(user data.User, templateFile string) error {
 
 	// Alternative html body
 	htmlBody := new(bytes.Buffer)
-	err = tmpl.ExecuteTemplate(htmlBody, "htmlBody", user)
+	err = tmpl.ExecuteTemplate(htmlBody, "htmlBody", data)
 	if err != nil {
 		log.Printf("failed to ExecuteTemplate for htmlBody: %s\n", err)
 		return err

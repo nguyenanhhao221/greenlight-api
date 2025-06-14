@@ -2,7 +2,9 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/nguyenanhhao221/greenlight-api/internal/data"
 	"github.com/nguyenanhhao221/greenlight-api/internal/models"
@@ -47,10 +49,22 @@ func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Send welcome email to user in the background
-	app.logger.Info("Create user successfully, sending welcome email!")
+	// Create a activation token to be sent to user welcome email
+	token, err := app.models.Token.New(user.ID, (24 * 3 * time.Hour), data.ScopeActivation)
+	// TODO: if there is an error when creating token, should rollback the user creation as well, or has another endpoint to re-trigger the token creation
+	if err != nil {
+		err = fmt.Errorf("error create token %w", err)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	// Send welcome email to user in the background with activation token
+	app.logger.Info("Create user and activation token successfully, sending welcome email!")
 	app.background(func() {
-		err = app.mailer.Send(*user, "user_welcome.tmpl")
+		data := map[string]any{
+			"activationToken": token.Plain,
+			"userId":          user.ID,
+		}
+		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
 		if err != nil {
 			app.logger.Error("Error sending user to", "user: email", user.Email)
 		}
@@ -63,3 +77,4 @@ func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 }
+
