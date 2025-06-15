@@ -134,18 +134,34 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 	})
 }
 
-func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+// requireAuthenticatedUser middleware require user not to be anonymous, it does not require the user to be activated. Use [requireActivatedUser]
+// if require both activate and not anonymous
+func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := app.contextGetUser(r)
+
 		if user.IsAnonymousUser() {
 			app.authenticationRequiredResponse(w, r)
 			return
 		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// requireActivatedUser middleware require user to be both authenticated and activated
+// Internally this middleware call [requireActivatedUser] and perform additional check if user is activated
+func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
+
 		if !user.Activated {
-			app.logger.Warn("user with ", "id", user.ID, "is not activated, preventing user from accessing resource", "")
+			app.logger.Warn("user is not activated, preventing access to resource ", "user id", user.ID)
 			app.inactiveAccountResponse(w, r)
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
+
+	// Wrap the call to requireActivatedUser so that both condition is check
+	return app.requireAuthenticatedUser(fn)
 }
