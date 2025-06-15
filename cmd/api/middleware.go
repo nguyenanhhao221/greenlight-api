@@ -93,7 +93,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		if authorizationHeader == "" {
 			app.logger.Info("Authorization header not found, setting user as AnonymousUser")
 			// If header is not set, treat user as anonymous user
-			app.contextSetUser(r, data.AnonymousUser)
+			r = app.contextSetUser(r, data.AnonymousUser)
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -128,7 +128,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		}
 
 		// Now that a user and token are valid, set the user in request context
-		app.contextSetUser(r, user)
+		r = app.contextSetUser(r, user)
 
 		next.ServeHTTP(w, r)
 	})
