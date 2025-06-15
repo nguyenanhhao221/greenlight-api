@@ -8,15 +8,16 @@ import (
 
 // TODO: make this into Enum
 const (
-	ScopeActivation = "activation"
+	ScopeActivation     = "activation"
+	ScopeAuthentication = "authentication"
 )
 
 type Token struct {
-	Plain  string
-	Hash   []byte
-	UserID int64
-	Expiry time.Time
-	Scope  string
+	Plain  string    `json:"token"`
+	Hash   []byte    `json:"-"`
+	UserID int64     `json:"-"`
+	Expiry time.Time `json:"expiry"`
+	Scope  string    `json:"-"`
 }
 
 func ValidatePlaintextToken(v *validator.Validator, token string) {
