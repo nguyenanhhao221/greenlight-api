@@ -50,6 +50,7 @@ func (m MovieModel) GetAll(title string, genres []string, filters data.Filters) 
 	if err != nil {
 		return nil, data.Metadata{}, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&totalRecords, &movie.ID, &movie.CreatedAt, &movie.Title, &movie.Year, &movie.Runtime, &movie.Genres, &movie.Version)
 		if err != nil {
