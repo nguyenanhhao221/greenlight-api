@@ -47,8 +47,8 @@ func (m UserModel) Create(user *data.User) error {
 	return nil
 }
 
-func (m UserModel) GetUserWithActivationToken(plainToken string, scope string) (*data.User, error) {
-	slog.Info("GetUserWithActivationToken")
+func (m UserModel) GetUserWithToken(plainToken string, scope string) (*data.User, error) {
+	slog.Info("GetUserWithToken", "scope", scope)
 	tokenHash := sha256.Sum256([]byte(plainToken))
 	query := `
 	SELECT users.id, users.name, users.email, users.activated, users.created_at, users.version
