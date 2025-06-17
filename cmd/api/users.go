@@ -49,6 +49,14 @@ func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Add the movies:read permission to the newly created user
+	err = app.models.Permission.AddForUser(user.ID, "movies:read")
+	if err != nil {
+		err = fmt.Errorf("error Permission.AddForUser %w", err)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	// Create a activation token to be sent to user welcome email
 	token, err := app.models.Token.New(user.ID, (24 * 3 * time.Hour), data.ScopeActivation)
 	// TODO: if there is an error when creating token, should rollback the user creation as well, or has another endpoint to re-trigger the token creation

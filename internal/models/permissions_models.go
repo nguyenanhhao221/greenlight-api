@@ -41,6 +41,18 @@ func (m PermissionModel) GetAllForUser(userId int64) (Permissions, error) {
 	return permissions, nil
 }
 
+func (m *PermissionModel) AddForUser(userId int64, permissions ...string) error {
+	query := `
+	INSERT INTO users_permissions
+	SELECT $1, permissions.id FROM permissions WHERE permissions.code = ANY($2);
+	`
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := m.DB.Exec(ctxWithTimeout, query, userId, permissions)
+	return err
+}
+
 // Includes is a helper to check if permission provide exist in the user's permissions
 func (p Permissions) Includes(permission string) bool {
 	return slices.Contains(p, permission)
