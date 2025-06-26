@@ -188,7 +188,18 @@ func (app *application) requirePermission(permission string, next http.HandlerFu
 
 func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Origin")
+		w.Header().Add("Vary", "Access-Control-Request-Method")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		// If this if statement is satisfy, this is a pre-flight request
+		/// We need to response to this pre-flight request by setting appropriate header and status OK
+		if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
+			w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, PUT, PATCH, DELETE")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }

@@ -71,9 +71,18 @@ func (m MovieModel) Get(id int64) (*data.Movie, error) {
 		return nil, ErrRecordNotFound
 	}
 	query := `
-	SELECT id, created_at, title, year, runtime, genres, version FROM movies
-	WHERE id=$1;
+	SELECT
+	    id,
+	    created_at,
+	    title,
+	    year,
+	    runtime,
+	    genres,
+	    version
+	FROM movies
+	WHERE id = $1;
 	`
+
 	movie := data.Movie{}
 
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -96,7 +105,7 @@ func (m MovieModel) Get(id int64) (*data.Movie, error) {
 func (m *MovieModel) Update(movie *data.Movie) error {
 	// Use version to prevent data race condition to update. This can be consider as optimistic locking
 	query := `
-		UPDATE movies 
+		UPDATE movies
 		SET title = $1, year = $2, runtime = $3, genres = $4, version = version + 1
 		WHERE id = $5 AND version = $6
 		RETURNING version;
@@ -116,7 +125,10 @@ func (m *MovieModel) Update(movie *data.Movie) error {
 }
 
 func (m MovieModel) Delete(id int64) error {
-	query := `DELETE FROM movies WHERE id = $1`
+	query := `
+		DELETE FROM movies
+		WHERE id = $1
+	`
 
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
